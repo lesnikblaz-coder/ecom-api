@@ -9,7 +9,7 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import repository
+from app.repositories import user_repository
 from app import exceptions
 
 load_dotenv(".env")
@@ -43,8 +43,7 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     except(JWTError, KeyError):
         raise exceptions.InvalidTokenError("Invalid token.")
 
-    user = repository.user_get_by_id(db, user_id)
+    user = user_repository.user_get_by_id(db, user_id)
     if not user:
         raise exceptions.UserNotFoundError("User not found.")
-
     return user

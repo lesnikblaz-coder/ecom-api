@@ -14,6 +14,11 @@ class UserResponse(BaseModel):
     is_active: bool
     role: UserRole
 
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    is_active: bool | None = None
+    role: UserRole | None = None
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
