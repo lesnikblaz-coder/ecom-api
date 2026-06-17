@@ -18,3 +18,6 @@ class CategoryNotFoundError(Exception):
 
 class ProductNotFoundError(Exception):
     pass
+
+class CategoryAlreadyExistsError(Exception):
+    pass

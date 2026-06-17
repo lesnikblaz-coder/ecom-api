@@ -12,6 +12,9 @@ def categories_get(db: Session) -> Sequence[Category]:
 def category_get(db: Session, category_id: int) -> Category | None:
     return db.scalar(select(Category).where(Category.category_id == category_id))
 
+def category_get_by_name(db: Session, name: str) -> Category | None:
+    return db.scalar(select(Category).where(Category.name == name))
+
 def category_create(db: Session, category: Category) -> Category:
     db.add(category)
     db.commit()

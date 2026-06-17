@@ -3,7 +3,7 @@ from collections.abc import Sequence
 
 from app.models import Category
 from app.repositories import category_repository
-from app.exceptions import CategoryNotFoundError
+from app.exceptions import CategoryNotFoundError, CategoryAlreadyExistsError
 from app.schemas import CategoryUpdate
 
 def categories_get(db: Session) -> Sequence[Category]:
@@ -16,6 +16,8 @@ def category_get(db: Session, category_id: int) -> Category:
     return category
 
 def category_create(db: Session, name: str) -> Category:
+    if category_repository.category_get_by_name(db, name):
+        raise CategoryAlreadyExistsError("Category already exists.")
     category = Category(name=name)
     return category_repository.category_create(db, category)
 
