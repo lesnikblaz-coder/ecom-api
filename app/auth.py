@@ -51,20 +51,18 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
         raise exceptions.UserNotFoundError("User not found.")
     return user
 
-def required_roles(*roles): ## We bake in the required roles to check if current user's role matches
-    def checker(current_user: User = Depends(get_current_user)): ## We get the current user
+def required_roles(*roles):
+    def checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in roles:
             raise exceptions.InsufficientPermissions("Insufficient permissions.")
         return current_user
     return checker
 
-def require_admin():
-    required_roles(
-        enums.UserRole.ADMIN
-    )
+require_admin = required_roles(
+    enums.UserRole.ADMIN
+)
 
-def require_staff():
-    required_roles(
-        enums.UserRole.ADMIN,
-        enums.UserRole.STAFF
-    )
+require_staff = required_roles(
+    enums.UserRole.ADMIN,
+    enums.UserRole.STAFF
+)
