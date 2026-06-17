@@ -22,3 +22,7 @@ def register_exception_handlers(app):
      @app.exception_handler(exceptions.InsufficientPermissions)
      def insufficient_permissions(_, exc: exceptions.InsufficientPermissions):
          return JSONResponse(status_code=403, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.CategoryNotFoundError)
+     def category_not_found(_, exc:exceptions.CategoryNotFoundError):
+         return JSONResponse(status_code=404, content={"detail": str(exc)})

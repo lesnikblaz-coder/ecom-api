@@ -22,3 +22,12 @@ class UserUpdate(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+class CategoryResponse(BaseModel):
+    category_id: int
+    name: str
+
+class CategoryUpdate(BaseModel):
+    name: str | None = None
+
+#class CategoryProductsResponse(BaseModel):

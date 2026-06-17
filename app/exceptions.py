@@ -12,3 +12,6 @@ class InvalidCredentialsError(Exception):
 
 class InsufficientPermissions(Exception):
     pass
+
+class CategoryNotFoundError(Exception):
+    pass
