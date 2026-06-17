@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -15,6 +16,9 @@ def user_create(db: Session, user: User) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+def users_get(db: Session) -> Sequence[User]:
+    return db.scalars(select(User)).all()
 
 def user_update(db: Session, user: User, data: UserUpdate) -> User:
     update_data = data.model_dump(exclude_unset=True)
