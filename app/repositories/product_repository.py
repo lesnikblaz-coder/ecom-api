@@ -26,7 +26,6 @@ def product_update(db: Session, product: Product, data: ProductUpdate) -> Produc
     db.refresh(product)
     return product
 
-def product_delete(db: Session, product: Product) -> Product:
+def product_delete(db: Session, product: Product) -> None:
     db.delete(product)
     db.commit()
-    return product

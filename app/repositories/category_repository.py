@@ -27,7 +27,6 @@ def category_update(db: Session, category: Category, data: schemas.CategoryUpdat
     db.refresh(category)
     return category
 
-def category_delete(db: Session, category: Category) -> Category:
+def category_delete(db: Session, category: Category) -> None:
     db.delete(category)
     db.commit()
-    return category

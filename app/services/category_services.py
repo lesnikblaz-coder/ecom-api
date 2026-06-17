@@ -23,6 +23,6 @@ def category_update(db: Session, category_id: int, data: CategoryUpdate) -> Cate
     category = category_get(db, category_id)
     return category_repository.category_update(db, category, data)
 
-def category_delete(db: Session, category_id: int) -> Category:
+def category_delete(db: Session, category_id: int) -> None:
     category = category_get(db, category_id)
-    return category_repository.category_delete(db, category)
+    category_repository.category_delete(db, category)

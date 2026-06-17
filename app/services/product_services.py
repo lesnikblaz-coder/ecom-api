@@ -27,6 +27,6 @@ def product_update(db: Session, product_id: int, data: ProductUpdate) -> Product
     product = product_get(db, product_id)
     return product_repository.product_update(db, product, data)
 
-def product_delete(db: Session, product_id: int) -> Product:
+def product_delete(db: Session, product_id: int) -> None:
     product = product_get(db, product_id)
-    return product_repository.product_delete(db, product)
+    product_repository.product_delete(db, product)
