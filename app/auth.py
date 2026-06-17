@@ -8,9 +8,12 @@ from datetime import datetime, timezone, timedelta
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 
+from app import exceptions
+from app import enums
+
 from app.database import get_db
 from app.repositories import user_repository
-from app import exceptions
+from app.models import User
 
 load_dotenv(".env")
 
@@ -47,3 +50,21 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     if not user:
         raise exceptions.UserNotFoundError("User not found.")
     return user
+
+def required_roles(*roles): ## We bake in the required roles to check if current user's role matches
+    def checker(current_user: User = Depends(get_current_user)): ## We get the current user
+        if current_user.role not in roles:
+            raise exceptions.InsufficientPermissions("Insufficient permissions.")
+        return current_user
+    return checker
+
+def require_admin():
+    required_roles(
+        enums.UserRole.ADMIN
+    )
+
+def require_staff():
+    required_roles(
+        enums.UserRole.ADMIN,
+        enums.UserRole.STAFF
+    )

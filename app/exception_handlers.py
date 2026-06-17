@@ -18,3 +18,7 @@ def register_exception_handlers(app):
      @app.exception_handler(exceptions.InvalidCredentialsError)
      def invalid_credentials(_, exc: exceptions.InvalidCredentialsError):
          return JSONResponse(status_code=401, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.InsufficientPermissions)
+     def insufficient_permissions(_, exc: exceptions.InsufficientPermissions):
+         return JSONResponse(status_code=403, content={"detail": str(exc)})

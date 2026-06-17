@@ -9,3 +9,6 @@ class EmailAlreadyRegisteredError(Exception):
 
 class InvalidCredentialsError(Exception):
     pass
+
+class InsufficientPermissions(Exception):
+    pass
