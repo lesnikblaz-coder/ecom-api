@@ -72,7 +72,7 @@ class ProductResponse(BaseModel):
     product_id: int
     category_id: int
     name: str
-    description: str
+    description: str | None = None
     price: Decimal
     quantity: int
 
