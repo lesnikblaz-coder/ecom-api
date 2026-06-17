@@ -10,7 +10,7 @@ from app import models
 
 from app.database import get_db
 from app.exception_handlers import register_exception_handlers
-from app.services import auth_services, user_services, category_services
+from app.services import auth_services, user_services, category_services, product_services
 
 app = FastAPI()
 register_exception_handlers(app)
@@ -49,6 +49,10 @@ def user_delete(user_id: int, db: db_session, _: models.User=Depends(auth.requir
 
 
 # CATEGORIES (staff+)
+@app.post("/categories", response_model=schemas.CategoryResponse)
+def category_create(db: db_session, data: schemas.CategoryRequest, _: models.User=Depends(auth.require_staff)) -> models.Category:
+    return category_services.category_create(db, data.name)
+
 @app.get("/categories", response_model=list[schemas.CategoryResponse])
 def categories_get(db: db_session, _: models.User=Depends(auth.require_staff)) -> Sequence[models.Category]:
     return category_services.categories_get(db)
@@ -64,3 +68,32 @@ def category_update(category_id: int, db: db_session, data: schemas.CategoryUpda
 @app.delete("/categories/{category_id}", status_code=204)
 def category_delete(category_id: int, db: db_session, _: models.User=Depends(auth.require_staff)) -> None:
     category_services.category_delete(db, category_id)
+
+
+# PRODUCTS
+@app.post("/products", response_model=schemas.ProductResponse) # staff+
+def product_create(db: db_session, data: schemas.ProductRequest, _: models.User=Depends(auth.require_staff)) -> models.Product:
+    return product_services.product_create(
+        db=db,
+        category_id=data.category_id,
+        name=data.name,
+        description=data.description,
+        price=data.price,
+        quantity=data.quantity
+    )
+
+@app.get("/products", response_model=list[schemas.ProductResponse]) # authenticated+
+def products_get(db: db_session, _: models.User=Depends(auth.get_current_user)) -> Sequence[models.Product]:
+    return product_services.products_get(db)
+
+@app.get("/products/{product_id}", response_model=schemas.ProductResponse) # authenticated+
+def product_get(product_id: int, db: db_session, _: models.User=Depends(auth.get_current_user)) -> models.Product:
+    return product_services.product_get(db, product_id)
+
+@app.put("/products/{product_id}", response_model=schemas.ProductResponse) # staff+
+def product_update(product_id: int, db: db_session, data: schemas.ProductUpdate, _: models.User=Depends(auth.require_staff)) -> models.Product:
+    return product_services.product_update(db, product_id, data)
+
+@app.delete("/products/{product_id}", status_code=204) # staff+
+def product_delete(product_id: int, db: db_session, _: models.User=Depends(auth.require_staff)) -> None:
+    product_services.product_delete(db, product_id)

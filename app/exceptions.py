@@ -15,3 +15,6 @@ class InsufficientPermissions(Exception):
 
 class CategoryNotFoundError(Exception):
     pass
+
+class ProductNotFoundError(Exception):
+    pass

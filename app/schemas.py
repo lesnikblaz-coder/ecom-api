@@ -1,7 +1,10 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
+from decimal import Decimal
 
 from app.enums import UserRole
 
+
+# USER
 class UserLoginRegister(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
@@ -23,11 +26,65 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
+
+# CATEGORY
+class CategoryRequest(BaseModel):
+    name: str = Field(min_length=3, max_length=30)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, name):
+        return name.strip().title()
+
 class CategoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     category_id: int
     name: str
 
 class CategoryUpdate(BaseModel):
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=3, max_length=30)
 
-#class CategoryProductsResponse(BaseModel):
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, name):
+        if name is None:
+            return None
+        return name.strip().title()
+
+
+# PRODUCT
+class ProductRequest(BaseModel):
+    category_id: int
+    name: str = Field(min_length=3, max_length=30)
+    description: str = Field(max_length=200)
+    price: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
+    quantity: int = Field(ge=0, le=10000)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, name):
+        return name.strip().capitalize()
+
+class ProductResponse(BaseModel):
+    model_config =  ConfigDict(from_attributes=True)
+
+    product_id: int
+    category_id: int
+    name: str
+    description: str
+    price: Decimal
+    quantity: int
+
+class ProductUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=3, max_length=30)
+    description: str | None = Field(default=None, max_length=200)
+    price: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
+    quantity: int | None = Field(default=None, ge=0, le=10000)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, name):
+        if name is None:
+            return None
+        return name.strip().capitalize()
