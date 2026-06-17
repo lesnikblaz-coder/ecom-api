@@ -15,6 +15,10 @@ def category_get(db: Session, category_id: int) -> Category:
         raise CategoryNotFoundError("Category not found.")
     return category
 
+def category_create(db: Session, name: str) -> Category:
+    category = Category(name=name)
+    return category_repository.category_create(db, category)
+
 def category_update(db: Session, category_id: int, data: CategoryUpdate) -> Category:
     category = category_get(db, category_id)
     return category_repository.category_update(db, category, data)

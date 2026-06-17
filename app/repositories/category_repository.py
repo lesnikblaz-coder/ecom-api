@@ -12,6 +12,12 @@ def categories_get(db: Session) -> Sequence[Category]:
 def category_get(db: Session, category_id: int) -> Category | None:
     return db.scalar(select(Category).where(Category.category_id == category_id))
 
+def category_create(db: Session, category: Category) -> Category:
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
 def category_update(db: Session, category: Category, data: schemas.CategoryUpdate) -> Category:
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
