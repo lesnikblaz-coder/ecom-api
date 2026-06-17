@@ -15,7 +15,7 @@ register_exception_handlers(app)
 
 db_session = Annotated[Session, Depends(get_db)]
 
-# AUTH
+# USER AUTH
 @app.post("/auth/register", response_model=schemas.TokenResponse)
 def register(request: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
     return auth_services.register(db, request.email, request.password)
@@ -42,5 +42,5 @@ def user_update(user_id: int, data: schemas.UserUpdate, db: db_session) -> User:
     return user_services.user_update(db, user_id, data)
 
 @app.delete("/users/{user_id}", status_code=204)
-def user_delete(user_id: int, db: db_session) -> User:
-    return user_services.user_delete(db, user_id)
+def user_delete(user_id: int, db: db_session) -> None:
+    user_services.user_delete(db, user_id)
