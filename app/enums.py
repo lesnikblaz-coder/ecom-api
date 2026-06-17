@@ -4,3 +4,10 @@ class UserRole(StrEnum):
     CUSTOMER = "customer"
     STAFF = "staff"
     ADMIN = "admin"
+
+class OrderStatus(StrEnum):
+    PENDING = "pending"
+    PAID = "paid"
+    SHIPPED = "shipped"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"

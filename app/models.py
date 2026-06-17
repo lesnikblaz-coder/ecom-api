@@ -1,9 +1,10 @@
-from sqlalchemy import Integer, String, Boolean, ForeignKey, Enum, DECIMAL, UniqueConstraint
+from sqlalchemy import Integer, String, Boolean, ForeignKey, Enum, DECIMAL, UniqueConstraint, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from decimal import Decimal
+from datetime import datetime
 
 from app.database import Base
-from app.enums import UserRole
+from app.enums import UserRole, OrderStatus
 
 class User(Base):
     __tablename__ = "users"
@@ -16,6 +17,8 @@ class User(Base):
 
     # 1:1 relationship
     cart: Mapped["Cart"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+    orders: Mapped[list["Order"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 class Category(Base):
     __tablename__ = "categories"
@@ -37,6 +40,7 @@ class Product(Base):
 
     category: Mapped[Category] = relationship(back_populates="products")
     cart_items: Mapped[list["CartItem"]] = relationship(back_populates="product")
+    order_items: Mapped[list["OrderItem"]] = relationship(back_populates="product")
 
 class Cart(Base):
     __tablename__ = "carts"
@@ -63,3 +67,27 @@ class CartItem(Base):
 
     cart: Mapped[Cart] = relationship(back_populates="cart_items")
     product: Mapped[Product] = relationship(back_populates="cart_items")
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    order_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=False)
+    total_price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False,  default=OrderStatus.PENDING)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
+    user: Mapped[User] = relationship(back_populates="orders")
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+
+    order_item_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    order_id: Mapped[int] = mapped_column(Integer, ForeignKey("orders.order_id"), nullable=False)
+    product_id: Mapped[int] = mapped_column(Integer, ForeignKey("products.product_id"), nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    unit_price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+
+    order: Mapped[Order] = relationship(back_populates="order_items")
+    product: Mapped[Product] = relationship(back_populates="order_items")
