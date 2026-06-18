@@ -21,3 +21,6 @@ class ProductNotFoundError(Exception):
 
 class CategoryAlreadyExistsError(Exception):
     pass
+
+class InsufficientStockError(Exception):
+    pass

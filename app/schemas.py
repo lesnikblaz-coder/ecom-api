@@ -88,3 +88,23 @@ class ProductUpdate(BaseModel):
         if name is None:
             return None
         return name.strip().capitalize()
+
+
+# CART
+class CartItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    cart_item_id: int
+    product: ProductResponse
+    quantity: int
+
+class CartResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    cart_id: int
+    user_id: int
+    cart_items: list[CartItemResponse]
+
+class CartItemRequest(BaseModel):
+    product_id: int
+    quantity: int = Field(gt=0)

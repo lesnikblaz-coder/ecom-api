@@ -34,3 +34,7 @@ def register_exception_handlers(app):
      @app.exception_handler(exceptions.CategoryAlreadyExistsError)
      def category_already_exists(_, exc:exceptions.CategoryAlreadyExistsError):
          return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.InsufficientStockError)
+     def insufficient_stock(_, exc:exceptions.InsufficientStockError):
+         return JSONResponse(status_code=409, content={"detail": str(exc)})
