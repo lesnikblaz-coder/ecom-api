@@ -20,13 +20,13 @@ db_session = Annotated[Session, Depends(get_db)]
 
 # USER AUTH
 @app.post("/auth/register", response_model=schemas.TokenResponse)
-def register(request: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
-    return auth_services.register(db, request.email, request.password)
+def register(data: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
+    return auth_services.register(db, data.email, data.password)
 
 
 @app.post("/auth/login", response_model=schemas.TokenResponse)
-def login(request: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
-    return auth_services.login(db, request.email, request.password)
+def login(data: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
+    return auth_services.login(db, data.email, data.password)
 
 
 @app.post("/auth/token", response_model=schemas.TokenResponse)
@@ -125,5 +125,13 @@ def cart_get(db: db_session, current_user: models.User = Depends(auth.get_curren
     return cart_services.cart_get_or_create(db, current_user.user_id)
 
 @app.post("/cart/items", response_model=schemas.CartItemResponse)
-def add_to_cart(db: db_session, request: schemas.CartItemRequest, current_user: models.User = Depends(auth.get_current_user)):
-    return cart_services.add_to_cart(db, current_user.user_id, request.product_id, request.quantity)
+def add_to_cart(db: db_session, data: schemas.CartItemRequest, current_user: models.User = Depends(auth.get_current_user)):
+    return cart_services.add_to_cart(db, current_user.user_id, data.product_id, data.quantity)
+
+@app.post("/cart/items/{cart_item_id}", response_model=schemas.CartItemResponse)
+def cart_item_quantity_update(db: db_session, cart_item_id: int, data: schemas.CartItemQuantityUpdate, current_user: models.User = Depends(auth.get_current_user)):
+    return cart_services.cart_item_update(db, current_user.user_id, cart_item_id, data.quantity)
+
+@app.delete("/cart/items/{cart_item_id}", status_code=204)
+def cart_item_delete(db: db_session, cart_item_id: int, current_user: models.User = Depends(auth.get_current_user)):
+    cart_services.cart_item_delete(db, current_user.user_id, cart_item_id)

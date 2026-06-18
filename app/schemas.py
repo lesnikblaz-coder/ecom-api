@@ -108,3 +108,6 @@ class CartResponse(BaseModel):
 class CartItemRequest(BaseModel):
     product_id: int
     quantity: int = Field(gt=0)
+
+class CartItemQuantityUpdate(BaseModel):
+    quantity: int = Field(gt=0)

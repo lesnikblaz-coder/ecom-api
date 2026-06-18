@@ -38,3 +38,7 @@ def register_exception_handlers(app):
      @app.exception_handler(exceptions.InsufficientStockError)
      def insufficient_stock(_, exc:exceptions.InsufficientStockError):
          return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.CartItemNotFoundError)
+     def cart_item_not_found(_, exc: exceptions.CartItemNotFoundError):
+         return JSONResponse(status_code=404, content={"detail": str(exc)})

@@ -24,3 +24,6 @@ class CategoryAlreadyExistsError(Exception):
 
 class InsufficientStockError(Exception):
     pass
+
+class CartItemNotFoundError(Exception):
+    pass
