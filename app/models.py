@@ -76,6 +76,7 @@ class Order(Base):
     total_price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
     status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False,  default=OrderStatus.PENDING)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    delivery_address: Mapped[str] = mapped_column(String, nullable=False)
 
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
     user: Mapped[User] = relationship(back_populates="orders")
