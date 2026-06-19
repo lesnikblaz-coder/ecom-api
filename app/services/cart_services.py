@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories import cart_repository, product_repository
 from app.models import Cart, CartItem
-from app.exceptions import ProductNotFoundError, InsufficientStockError, CartItemNotFoundError
+from app.exceptions import ProductNotFoundError, InsufficientStockError, CartItemNotFoundError, CartNotFoundError
 
 def require_cart_item(db: Session, cart_id: int, cart_item_id: int) -> CartItem:
     cart_item = cart_repository.cart_item_get_by_id(db, cart_id, cart_item_id)
@@ -17,6 +17,12 @@ def cart_get_or_create(db: Session, user_id: int) -> Cart:
     if not cart:
         cart = Cart(user_id=user_id)
         cart = cart_repository.cart_create(db, cart)
+    return cart
+
+def cart_get(db: Session, user_id: int) -> Cart:
+    cart = cart_repository.cart_get_by_user(db, user_id)
+    if not cart:
+        raise CartNotFoundError("Cart doesn't exist.")
     return cart
 
 def add_to_cart(db: Session, user_id: int, product_id: int, quantity_to_add: int) -> CartItem:
@@ -61,3 +67,7 @@ def cart_item_delete(db: Session, user_id: int, cart_item_id: int) -> None:
     cart = cart_get_or_create(db, user_id)
     cart_item = require_cart_item(db, cart.cart_id, cart_item_id)
     cart_repository.cart_item_delete(db, cart_item)
+
+def cart_delete(db: Session, user_id: int) -> None:
+    cart = cart_get(db, user_id)
+    cart_repository.cart_delete(db, cart)

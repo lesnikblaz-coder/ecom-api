@@ -27,3 +27,6 @@ class InsufficientStockError(Exception):
 
 class CartItemNotFoundError(Exception):
     pass
+
+class CartNotFoundError(Exception):
+    pass

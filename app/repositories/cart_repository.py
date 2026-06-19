@@ -1,22 +1,32 @@
+from typing import Any
+
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models import Cart, CartItem
 
 def cart_get_by_user(db: Session, user_id: int) -> Cart | None:
-    return db.scalar(select(Cart).where(Cart.user_id == user_id))
+    return db.scalar(
+        select(Cart)
+        .where(Cart.user_id == user_id)
+        .options(selectinload(Cart.cart_items).selectinload(CartItem.product))
+    )
+
+def create_or_save(db: Session, obj: Any) -> Any:
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+def delete(db: Session, obj: Any) -> Any:
+    db.delete(obj)
+    db.commit()
 
 def cart_create(db: Session, cart: Cart) -> Cart:
-    db.add(cart)
-    db.commit()
-    db.refresh(cart)
-    return cart
+    return create_or_save(db, cart)
 
 def cart_item_save(db: Session, cart_item: CartItem) -> CartItem:
-    db.add(cart_item)
-    db.commit()
-    db.refresh(cart_item)
-    return cart_item
+    return create_or_save(db, cart_item)
 
 def cart_item_get_by_product(db: Session, cart_id: int, product_id: int) -> CartItem | None:
     return db.scalar(select(CartItem).where(
@@ -31,8 +41,7 @@ def cart_item_get_by_id(db: Session, cart_id: int, cart_item_id: int) -> CartIte
     ))
 
 def cart_item_delete(db: Session, cart_item: CartItem) -> None:
-    db.delete(cart_item)
-    db.commit()
+    delete(db, cart_item)
 
-def cart_clear():
-    pass
+def cart_delete(db: Session, cart: Cart) -> None:
+    delete(db, cart)
