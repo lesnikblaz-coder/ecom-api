@@ -7,7 +7,7 @@ class UserRole(StrEnum):
 
 class OrderStatus(StrEnum):
     PENDING = "pending"
-    PAID = "paid"
+    CONFIRMED = "confirmed"
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
