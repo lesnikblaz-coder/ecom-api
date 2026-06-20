@@ -11,6 +11,12 @@ from app.enums import OrderStatus
 def orders_get_by_user(db: Session, user_id: int) -> Sequence[Order]:
     return order_repository.orders_get(db, user_id)
 
+def order_get_by_user(db: Session, order_id: int, user_id: int) -> Order:
+    order = order_repository.order_get_by_id(db, order_id, user_id)
+    if not order:
+        raise OrderNotFoundError("Order not found.")
+    return order
+
 def checkout(db: Session, user_id: int, delivery_address: str):
     try:
         cart = cart_get(db, user_id)
@@ -64,10 +70,7 @@ def cancel(db: Session, order_id: int, user_id: int) -> Order:
     # SHIPPED, DELIVERED -> UNCANCELLABLE
 
     try:
-        order = order_repository.order_get_by_id(db, order_id, user_id)
-
-        if not order:
-            raise OrderNotFoundError("Order not found.")
+        order = order_get_by_user(db, order_id, user_id)
 
         if order.status in (OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.CANCELLED):
             raise InvalidOrderStateError("Order in uncancellable state.")

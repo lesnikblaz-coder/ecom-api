@@ -132,6 +132,10 @@ def orders_get(db: db_session, current_user: models.User = Depends(auth.get_curr
 def order_create(db: db_session, data: schemas.OrderCreate, current_user: models.User = Depends(auth.get_current_user)):
     return order_services.checkout(db, current_user.user_id, delivery_address=data.delivery_address)
 
+@app.get("/orders/{order_id}", response_model=schemas.OrderResponse)
+def order_get(db: db_session, order_id: int, current_user: models.User = Depends(auth.get_current_user)):
+    return order_services.order_get_by_user(db, order_id, current_user.user_id)
+
 @app.put("/orders/{order_id}/cancel", response_model=schemas.OrderResponse)
 def order_cancel(db: db_session, order_id: int, current_user: models.User = Depends(auth.get_current_user)) -> models.Order:
     return order_services.cancel(db, order_id, current_user.user_id)
