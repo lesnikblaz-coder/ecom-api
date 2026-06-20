@@ -43,5 +43,5 @@ def cart_item_get_by_id(db: Session, cart_id: int, cart_item_id: int) -> CartIte
 def cart_item_delete(db: Session, cart_item: CartItem) -> None:
     delete(db, cart_item)
 
-def cart_delete(db: Session, cart: Cart) -> None:
-    delete(db, cart)
+def cart_clear(db: Session, cart_item: CartItem) -> None:
+    delete(db, cart_item)

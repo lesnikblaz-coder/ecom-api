@@ -30,3 +30,12 @@ class CartItemNotFoundError(Exception):
 
 class CartNotFoundError(Exception):
     pass
+
+class EmptyCartError(Exception):
+    pass
+
+class OrderNotFoundError(Exception):
+    pass
+
+class InvalidOrderStateError(Exception):
+    pass

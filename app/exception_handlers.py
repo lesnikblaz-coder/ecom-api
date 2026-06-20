@@ -46,3 +46,15 @@ def register_exception_handlers(app):
      @app.exception_handler(exceptions.CartNotFoundError)
      def cart_not_found(_, exc: exceptions.CartNotFoundError):
          return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.EmptyCartError)
+     def empty_cart(_, exc: exceptions.EmptyCartError):
+         return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.OrderNotFoundError)
+     def order_not_found(_, exc: exceptions.OrderNotFoundError):
+         return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+     @app.exception_handler(exceptions.InvalidOrderStateError)
+     def invalid_order_status(_, exc: exceptions.InvalidOrderStateError):
+         return JSONResponse(status_code=409, content={"detail": str(exc)})

@@ -10,24 +10,21 @@ from app import models
 
 from app.database import get_db
 from app.exception_handlers import register_exception_handlers
-from app.services import auth_services, user_services, category_services, product_services, cart_services
+from app.services import auth_services, user_services, category_services, product_services, cart_services, order_services
 
 app = FastAPI()
 register_exception_handlers(app)
 
 db_session = Annotated[Session, Depends(get_db)]
 
-
 # USER AUTH
 @app.post("/auth/register", response_model=schemas.TokenResponse)
 def register(data: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
     return auth_services.register(db, data.email, data.password)
 
-
 @app.post("/auth/login", response_model=schemas.TokenResponse)
 def login(data: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
     return auth_services.login(db, data.email, data.password)
-
 
 @app.post("/auth/token", response_model=schemas.TokenResponse)
 def token(db: db_session, form_data: OAuth2PasswordRequestForm = Depends()) -> schemas.TokenResponse:
@@ -39,17 +36,13 @@ def token(db: db_session, form_data: OAuth2PasswordRequestForm = Depends()) -> s
 def users_get(db: db_session, _: models.User = Depends(auth.require_admin)) -> Sequence[models.User]:
     return user_services.users_get(db)
 
-
 @app.get("/users/{user_id}", response_model=schemas.UserResponse)
 def user_get(user_id: int, db: db_session, _: models.User = Depends(auth.require_admin)) -> models.User:
     return user_services.user_get(db, user_id)
 
-
 @app.put("/users/{user_id}", response_model=schemas.UserResponse)
-def user_update(user_id: int, data: schemas.UserUpdate, db: db_session,
-                _: models.User = Depends(auth.require_admin)) -> models.User:
+def user_update(user_id: int, data: schemas.UserUpdate, db: db_session, _: models.User = Depends(auth.require_admin)) -> models.User:
     return user_services.user_update(db, user_id, data)
-
 
 @app.delete("/users/{user_id}", status_code=204)
 def user_delete(user_id: int, db: db_session, _: models.User = Depends(auth.require_admin)) -> None:
@@ -58,26 +51,20 @@ def user_delete(user_id: int, db: db_session, _: models.User = Depends(auth.requ
 
 # CATEGORIES (staff+)
 @app.post("/categories", response_model=schemas.CategoryResponse)
-def category_create(db: db_session, data: schemas.CategoryRequest,
-                    _: models.User = Depends(auth.require_staff)) -> models.Category:
+def category_create(db: db_session, data: schemas.CategoryRequest, _: models.User = Depends(auth.require_staff)) -> models.Category:
     return category_services.category_create(db, data.name)
-
 
 @app.get("/categories", response_model=list[schemas.CategoryResponse])
 def categories_get(db: db_session, _: models.User = Depends(auth.require_staff)) -> Sequence[models.Category]:
     return category_services.categories_get(db)
 
-
 @app.get("/categories/{category_id}", response_model=schemas.CategoryResponse)
 def category_get(category_id: int, db: db_session, _: models.User = Depends(auth.require_staff)) -> models.Category:
     return category_services.category_get(db, category_id)
 
-
 @app.put("/categories/{category_id}", response_model=schemas.CategoryResponse)
-def category_update(category_id: int, db: db_session, data: schemas.CategoryUpdate,
-                    _: models.User = Depends(auth.require_staff)) -> models.Category:
+def category_update(category_id: int, db: db_session, data: schemas.CategoryUpdate, _: models.User = Depends(auth.require_staff)) -> models.Category:
     return category_services.category_update(db, category_id, data)
-
 
 @app.delete("/categories/{category_id}", status_code=204)
 def category_delete(category_id: int, db: db_session, _: models.User = Depends(auth.require_staff)) -> None:
@@ -97,22 +84,17 @@ def product_create(db: db_session, data: schemas.ProductRequest,
         quantity=data.quantity
     )
 
-
 @app.get("/products", response_model=list[schemas.ProductResponse])  # authenticated+
 def products_get(db: db_session, _: models.User = Depends(auth.get_current_user)) -> Sequence[models.Product]:
     return product_services.products_get(db)
-
 
 @app.get("/products/{product_id}", response_model=schemas.ProductResponse)  # authenticated+
 def product_get(product_id: int, db: db_session, _: models.User = Depends(auth.get_current_user)) -> models.Product:
     return product_services.product_get(db, product_id)
 
-
 @app.put("/products/{product_id}", response_model=schemas.ProductResponse)  # staff+
-def product_update(product_id: int, db: db_session, data: schemas.ProductUpdate,
-                   _: models.User = Depends(auth.require_staff)) -> models.Product:
+def product_update(product_id: int, db: db_session, data: schemas.ProductUpdate, _: models.User = Depends(auth.require_staff)) -> models.Product:
     return product_services.product_update(db, product_id, data)
-
 
 @app.delete("/products/{product_id}", status_code=204)  # staff+
 def product_delete(product_id: int, db: db_session, _: models.User = Depends(auth.require_staff)) -> None:
@@ -121,21 +103,35 @@ def product_delete(product_id: int, db: db_session, _: models.User = Depends(aut
 
 # CARTS
 @app.get("/cart", response_model=schemas.CartResponse)
-def cart_get(db: db_session, current_user: models.User = Depends(auth.get_current_user)):
+def cart_get(db: db_session, current_user: models.User = Depends(auth.get_current_user)) -> models.Cart:
     return cart_services.cart_get_or_create(db, current_user.user_id)
 
 @app.delete("/cart", status_code=204)
-def cart_delete(db: db_session, current_user: models.User = Depends(auth.get_current_user)):
-    cart_services.cart_delete(db, current_user.user_id)
+def cart_clear(db: db_session, current_user: models.User = Depends(auth.get_current_user)) -> None:
+    cart_services.cart_clear(db, current_user.user_id)
 
 @app.post("/cart/items", response_model=schemas.CartItemResponse)
-def add_to_cart(db: db_session, data: schemas.CartItemRequest, current_user: models.User = Depends(auth.get_current_user)):
+def add_to_cart(db: db_session, data: schemas.CartItemRequest, current_user: models.User = Depends(auth.get_current_user)) -> models.CartItem:
     return cart_services.add_to_cart(db, current_user.user_id, data.product_id, data.quantity)
 
 @app.put("/cart/items/{cart_item_id}", response_model=schemas.CartItemResponse)
-def cart_item_quantity_update(db: db_session, cart_item_id: int, data: schemas.CartItemQuantityUpdate, current_user: models.User = Depends(auth.get_current_user)):
+def cart_item_quantity_update(db: db_session, cart_item_id: int, data: schemas.CartItemQuantityUpdate, current_user: models.User = Depends(auth.get_current_user)) -> models.CartItem:
     return cart_services.cart_item_update(db, current_user.user_id, cart_item_id, data.quantity)
 
 @app.delete("/cart/items/{cart_item_id}", status_code=204)
-def cart_item_delete(db: db_session, cart_item_id: int, current_user: models.User = Depends(auth.get_current_user)):
+def cart_item_delete(db: db_session, cart_item_id: int, current_user: models.User = Depends(auth.get_current_user)) -> None:
     cart_services.cart_item_delete(db, current_user.user_id, cart_item_id)
+
+
+# ORDERS
+@app.get("/orders", response_model=list[schemas.OrderResponse])
+def orders_get(db: db_session, current_user: models.User = Depends(auth.get_current_user)) -> Sequence[models.Order]:
+    return order_services.orders_get_by_user(db, current_user.user_id)
+
+@app.post("/orders", response_model=schemas.OrderResponse)
+def order_create(db: db_session, data: schemas.OrderCreate, current_user: models.User = Depends(auth.get_current_user)):
+    return order_services.checkout(db, current_user.user_id, delivery_address=data.delivery_address)
+
+@app.put("/orders/{order_id}/cancel", response_model=schemas.OrderResponse)
+def order_cancel(db: db_session, order_id: int, current_user: models.User = Depends(auth.get_current_user)) -> models.Order:
+    return order_services.cancel(db, order_id, current_user.user_id)

@@ -68,6 +68,7 @@ def cart_item_delete(db: Session, user_id: int, cart_item_id: int) -> None:
     cart_item = require_cart_item(db, cart.cart_id, cart_item_id)
     cart_repository.cart_item_delete(db, cart_item)
 
-def cart_delete(db: Session, user_id: int) -> None:
+def cart_clear(db: Session, user_id: int) -> None:
     cart = cart_get(db, user_id)
-    cart_repository.cart_delete(db, cart)
+    for item in cart.cart_items:
+        cart_repository.cart_clear(db, item)

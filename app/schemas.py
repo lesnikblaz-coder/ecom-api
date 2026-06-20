@@ -1,7 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from decimal import Decimal
+from datetime import datetime
 
-from app.enums import UserRole
+from app.enums import UserRole, OrderStatus
 
 
 # USER
@@ -111,3 +112,28 @@ class CartItemRequest(BaseModel):
 
 class CartItemQuantityUpdate(BaseModel):
     quantity: int = Field(gt=0)
+
+
+# ORDER
+class OrderItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    order_item_id: int
+    order_id: int
+    product: ProductResponse
+    quantity: int
+    unit_price: Decimal
+
+class OrderResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    order_id: int
+    user_id: int
+    total_price: Decimal
+    status: OrderStatus
+    created_at: datetime
+    delivery_address: str
+    order_items: list[OrderItemResponse]
+
+class OrderCreate(BaseModel):
+    delivery_address: str = Field(min_length=5)
