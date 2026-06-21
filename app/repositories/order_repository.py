@@ -17,19 +17,8 @@ def order_get_by_id(db: Session, order_id: int, user_id: int) -> Order | None:
                      .options(selectinload(Order.order_items).selectinload(OrderItem.product))
                      )
 
-def order_create(db: Session, order: Order) -> Order:
-    db.add(order)
-    db.commit()
-    db.refresh(order)
-    return order
-
 def flush(db: Session) -> None:
     db.flush()
-
-def commit(db: Session, obj: Any) -> Any:
-    db.commit()
-    db.refresh(obj)
-    return obj
 
 def add(db: Session, obj: Any) -> Any:
     db.add(obj)
@@ -38,6 +27,3 @@ def add(db: Session, obj: Any) -> Any:
 def delete_return_only(db: Session, obj: Any) -> Any:
     db.delete(obj)
     return obj
-
-def rollback(db: Session) -> None:
-    db.rollback()
