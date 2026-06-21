@@ -3,7 +3,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
+from contextlib import contextmanager
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -26,3 +27,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+@contextmanager
+def transaction(db: Session):
+    try:
+        yield
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise

@@ -23,13 +23,16 @@ def order_create(db: Session, order: Order) -> Order:
     db.refresh(order)
     return order
 
-def save(db: Session, obj: Any, commit: bool = False, flush: bool = False) -> Any:
+def flush(db: Session) -> None:
+    db.flush()
+
+def commit(db: Session, obj: Any) -> Any:
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+def add(db: Session, obj: Any) -> Any:
     db.add(obj)
-    if commit:
-        db.commit()
-        db.refresh(obj)
-    if flush:
-        db.flush()
     return obj
 
 def delete_return_only(db: Session, obj: Any) -> Any:
