@@ -18,7 +18,7 @@ DATABASE_URL = (f"postgresql+psycopg2://"
                 f"{os.getenv("DB_PORT")}/"
                 f"{os.getenv("DB_NAME")}")
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 def get_db():

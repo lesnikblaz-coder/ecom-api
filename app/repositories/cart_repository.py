@@ -1,6 +1,7 @@
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy import delete as sql_delete
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Cart, CartItem
@@ -43,5 +44,6 @@ def cart_item_get_by_id(db: Session, cart_id: int, cart_item_id: int) -> CartIte
 def cart_item_delete(db: Session, cart_item: CartItem) -> None:
     delete(db, cart_item)
 
-def cart_clear(db: Session, cart_item: CartItem) -> None:
-    delete(db, cart_item)
+def cart_clear(db: Session, cart_id: int) -> None:
+    db.execute(sql_delete(CartItem).where(CartItem.cart_id == cart_id))
+    db.commit()

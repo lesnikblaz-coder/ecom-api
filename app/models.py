@@ -5,6 +5,7 @@ from datetime import datetime
 
 from app.database import Base
 from app.enums import UserRole, OrderStatus
+from app.exceptions import InvalidOrderStateError
 
 class User(Base):
     __tablename__ = "users"
@@ -80,6 +81,26 @@ class Order(Base):
 
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
     user: Mapped[User] = relationship(back_populates="orders")
+
+    def cancel(self) -> None:
+        if self.status not in (OrderStatus.PENDING, OrderStatus.CONFIRMED):
+            raise InvalidOrderStateError("Order in uncancellable state.")
+        self.status = OrderStatus.CANCELLED
+
+    def confirm(self) -> None:
+        if self.status != OrderStatus.PENDING:
+            raise InvalidOrderStateError("Only pending orders can be confirmed.")
+        self.status = OrderStatus.CONFIRMED
+
+    def ship(self):
+        if self.status != OrderStatus.CONFIRMED:
+            raise InvalidOrderStateError("Only confirmed orders can be shipped.")
+        self.status = OrderStatus.SHIPPED
+
+    def delivered(self):
+        if self.status != OrderStatus.SHIPPED:
+            raise InvalidOrderStateError("Only shipped orders can be delivered.")
+        self.status = OrderStatus.DELIVERED
 
 class OrderItem(Base):
     __tablename__ = "order_items"

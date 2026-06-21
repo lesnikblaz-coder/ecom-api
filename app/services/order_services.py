@@ -5,7 +5,7 @@ from decimal import Decimal
 from app.models import Order, OrderItem, CartItem
 from app.repositories import order_repository
 from app.services.cart_services import cart_get
-from app.exceptions import EmptyCartError, InsufficientStockError, OrderNotFoundError, InvalidOrderStateError
+from app.exceptions import EmptyCartError, InsufficientStockError, OrderNotFoundError
 from app.enums import OrderStatus
 from app.database import transaction
 
@@ -14,7 +14,7 @@ def validate_stock_return_total(items: list[CartItem]) -> Decimal:
     total_price = Decimal("0")
     for item in items:
         if item.quantity > item.product.quantity:
-            raise InsufficientStockError(f"Insufficient stock for {item.product.name} (ID: {item.product_id}.")
+            raise InsufficientStockError(f"Insufficient stock for {item.product.name} (ID: {item.product_id}).")
         total_price += (item.quantity * item.product.price)
     return total_price
 
@@ -37,7 +37,7 @@ def order_get_by_user(db: Session, order_id: int, user_id: int) -> Order:
         raise OrderNotFoundError("Order not found.")
     return order
 
-def checkout(db: Session, user_id: int, delivery_address: str):
+def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
     with transaction(db):
         cart = cart_get(db, user_id)
         items = cart.cart_items
@@ -69,21 +69,30 @@ def checkout(db: Session, user_id: int, delivery_address: str):
 
     return order
 
-
 def cancel(db: Session, order_id: int, user_id: int) -> Order:
-    # statuses: PENDING -> CONFIRMED → SHIPPED → DELIVERED
-    # PENDING -> CANCELLABLE (stock restored)
-    # CONFIRMED -> CANCELLABLE (stock restored)
-    # SHIPPED, DELIVERED -> UNCANCELLABLE
     with transaction(db):
         order = order_get_by_user(db, order_id, user_id)
-
-        if order.status in (OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.CANCELLED):
-            raise InvalidOrderStateError("Order in uncancellable state.")
-
-        order.status = OrderStatus.CANCELLED
+        order.cancel()
 
         for item in order.order_items:
             item.product.quantity += item.quantity
 
+    return order
+
+def confirm(db: Session, order_id: int, user_id: int) -> Order:
+    with transaction(db):
+        order = order_get_by_user(db, order_id, user_id)
+        order.confirm()
+    return order
+
+def ship(db: Session, order_id: int, user_id: int) -> Order:
+    with transaction(db):
+        order = order_get_by_user(db, order_id, user_id)
+        order.ship()
+    return order
+
+def delivered(db: Session, order_id: int, user_id: int) -> Order:
+    with transaction(db):
+        order = order_get_by_user(db, order_id, user_id)
+        order.delivered()
     return order
