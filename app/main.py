@@ -1,8 +1,10 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 from sqlalchemy.orm import Session
 from collections.abc import Sequence
+
+from starlette.status import HTTP_201_CREATED
 
 from app import schemas
 from app import auth
@@ -50,7 +52,7 @@ def user_delete(user_id: int, db: db_session, _: models.User = Depends(auth.requ
 
 
 # CATEGORIES (staff+)
-@app.post("/categories", response_model=schemas.CategoryResponse)
+@app.post("/categories", response_model=schemas.CategoryResponse, status_code=HTTP_201_CREATED)
 def category_create(db: db_session, data: schemas.CategoryRequest, _: models.User = Depends(auth.require_staff)) -> models.Category:
     return category_services.category_create(db, data.name)
 
@@ -72,7 +74,7 @@ def category_delete(category_id: int, db: db_session, _: models.User = Depends(a
 
 
 # PRODUCTS
-@app.post("/products", response_model=schemas.ProductResponse)  # staff+
+@app.post("/products", response_model=schemas.ProductResponse, status_code=HTTP_201_CREATED)  # staff+
 def product_create(db: db_session, data: schemas.ProductRequest,
                    _: models.User = Depends(auth.require_staff)) -> models.Product:
     return product_services.product_create(
@@ -128,7 +130,7 @@ def cart_item_delete(db: db_session, cart_item_id: int, current_user: models.Use
 def orders_get(db: db_session, current_user: models.User = Depends(auth.get_current_user)) -> Sequence[models.Order]:
     return order_services.orders_get_by_user(db, current_user.user_id)
 
-@app.post("/orders", response_model=schemas.OrderResponse)
+@app.post("/orders", response_model=schemas.OrderResponse, status_code=HTTP_201_CREATED)
 def order_create(db: db_session, data: schemas.OrderCreate, current_user: models.User = Depends(auth.get_current_user)):
     return order_services.checkout(db, current_user.user_id, delivery_address=data.delivery_address)
 
