@@ -48,6 +48,13 @@ def test_category_update_invalid(client, create_category):
 
     assert response.status_code == 422
 
+def test_category_update_invalid_id(client):
+    response = client.put(f'/categories/9999999', json={
+        "name": "new name update"
+    })
+
+    assert response.status_code == 404
+
 def test_category_delete(client, create_category, test_db):
     category_id = create_category['category_id']
     response = client.delete(f'/categories/{category_id}')
@@ -55,3 +62,8 @@ def test_category_delete(client, create_category, test_db):
     assert response.status_code == 204
     category = test_db.scalar(select(Category).where(Category.category_id == category_id))
     assert category is None
+
+def test_category_delete_invalid_id(client):
+    response = client.delete(f'/categories/9999999')
+
+    assert response.status_code == 404
