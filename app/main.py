@@ -111,7 +111,7 @@ def cart_get(db: db_session, current_user: models.User = Depends(auth.get_curren
 def cart_clear(db: db_session, current_user: models.User = Depends(auth.get_current_user)) -> None:
     cart_services.cart_clear(db, current_user.user_id)
 
-@app.post("/cart/items", response_model=schemas.CartItemResponse)
+@app.post("/cart/items", response_model=schemas.CartItemResponse, status_code=status.HTTP_201_CREATED)
 def add_to_cart(db: db_session, data: schemas.CartItemRequest, current_user: models.User = Depends(auth.get_current_user)) -> models.CartItem:
     return cart_services.add_to_cart(db, current_user.user_id, data.product_id, data.quantity)
 
