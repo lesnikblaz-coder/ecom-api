@@ -70,4 +70,4 @@ def cart_item_delete(db: Session, user_id: int, cart_item_id: int) -> None:
 
 def cart_clear(db: Session, user_id: int) -> None:
     cart = cart_get(db, user_id)
-    cart_clear(db, cart.cart_id)
+    cart_repository.cart_clear(db, cart.cart_id)
