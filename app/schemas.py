@@ -27,7 +27,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
-class UserIdResponse(BaseModel):
+class UserIdRequest(BaseModel):
     user_id: int
 
 
