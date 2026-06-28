@@ -3,14 +3,15 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
 from app.database import Base, get_db
 from app.main import app
-from app.auth import get_current_user, get_password_hash
-from app.models import User
+from app.auth import get_current_user
+from app.models import User, Order
+from app.enums import OrderStatus
 
 load_dotenv(Path(__file__).resolve().parent / ".env.test")
 
@@ -46,7 +47,7 @@ def test_db():
 def auth_user(test_db):
     user = User(
         email="test@test.com",
-        hashed_password=get_password_hash("test_password"),
+        hashed_password="test_password",
         role="admin",
         is_active=True
     )
@@ -105,9 +106,27 @@ def create_cart_item(client, create_product):
     return response.json()
 
 @pytest.fixture()
-def create_order(client):
+def create_order(client, create_cart_item):
     response = client.post("/orders", json={
         "delivery_address": "123 Test Street, Test City"
     })
     assert response.status_code == 201
     return response.json()
+
+@pytest.fixture()
+def create_order_confirmed(client, create_order, test_db):
+    order = test_db.scalar(select(Order).where(Order.order_id == create_order["order_id"]))
+
+    order.status = OrderStatus.CONFIRMED
+    test_db.flush()
+
+    return create_order
+
+@pytest.fixture()
+def create_order_shipped(client, create_order, test_db):
+    order = test_db.scalar(select(Order).where(Order.order_id == create_order["order_id"]))
+
+    order.status = OrderStatus.SHIPPED
+    test_db.flush()
+
+    return create_order
