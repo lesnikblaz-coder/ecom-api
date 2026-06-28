@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, event
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
@@ -34,13 +34,14 @@ def setup_database():
 @pytest.fixture()
 def test_db():
     connection = test_engine.connect()
-    transaction = connection.begin()
+    outer = connection.begin()
     session = TestSessionLocal(bind=connection)
+    nested = connection.begin_nested()
 
     yield session
 
     session.close()
-    transaction.rollback()
+    outer.rollback()
     connection.close()
 
 @pytest.fixture()
