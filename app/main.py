@@ -18,6 +18,10 @@ register_exception_handlers(app)
 
 db_session = Annotated[Session, Depends(get_db)]
 
+@app.get("/", include_in_schema=False)
+def root() -> dict[str, str]:
+    return {"status": "ok"}
+
 # USER AUTH
 @app.post("/auth/register", response_model=schemas.TokenResponse)
 def register(data: schemas.UserLoginRegister, db: db_session) -> schemas.TokenResponse:
