@@ -89,9 +89,9 @@ def product_create(db: db_session, data: schemas.ProductRequest,
         quantity=data.quantity
     )
 
-@app.get("/products", response_model=list[schemas.ProductResponse])  # authenticated+
-def products_get(db: db_session, _: models.User = Depends(auth.get_current_user)) -> Sequence[models.Product]:
-    return product_services.products_get(db)
+@app.get("/products", response_model=schemas.PaginatedProductResponse)  # authenticated+
+def products_get(db: db_session, _: models.User = Depends(auth.get_current_user), filters: schemas.ProductFilters = Depends()) -> schemas.PaginatedProductResponse:
+    return product_services.products_get(db, filters)
 
 @app.get("/products/{product_id}", response_model=schemas.ProductResponse)  # authenticated+
 def product_get(product_id: int, db: db_session, _: models.User = Depends(auth.get_current_user)) -> models.Product:
