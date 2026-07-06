@@ -8,6 +8,7 @@ from app.services.cart_services import cart_get
 from app.exceptions import EmptyCartError, InsufficientStockError, OrderNotFoundError
 from app.enums import OrderStatus
 from app.database import transaction
+from app.logging_config import logger
 
 # helpers
 def validate_stock_return_total(items: list[CartItem]) -> Decimal:
@@ -67,6 +68,7 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
             # clear cart
             order_repository.delete_return_only(db, item)
 
+    logger.info("Order created id=%s user=%s total=%s", order.order_id, user_id, order.total_price)
     return order
 
 def cancel(db: Session, order_id: int, user_id: int) -> Order:
@@ -77,22 +79,29 @@ def cancel(db: Session, order_id: int, user_id: int) -> Order:
         for item in order.order_items:
             item.product.quantity += item.quantity
 
+    logger.info("Cancelled order %s by user %s", order_id, user_id)
     return order
 
 def confirm(db: Session, order_id: int, user_id: int) -> Order:
     with transaction(db):
         order = order_get_by_user(db, order_id, user_id)
         order.confirm()
+
+    logger.info("Confirmed order %s by user %s", order_id, user_id)
     return order
 
 def ship(db: Session, order_id: int, user_id: int) -> Order:
     with transaction(db):
         order = order_get_by_user(db, order_id, user_id)
         order.ship()
+
+    logger.info("Shipped order %s by user %s", order_id, user_id)
     return order
 
 def delivered(db: Session, order_id: int, user_id: int) -> Order:
     with transaction(db):
         order = order_get_by_user(db, order_id, user_id)
         order.delivered()
+
+    logger.info("Delivered order %s by user %s", order_id, user_id)
     return order

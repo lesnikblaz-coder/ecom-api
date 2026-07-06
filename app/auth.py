@@ -14,6 +14,7 @@ from app import enums
 from app.database import get_db
 from app.repositories import user_repository
 from app.models import User
+from app.logging_config import logger
 
 load_dotenv(".env")
 
@@ -54,6 +55,7 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
 def required_roles(*roles):
     def checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in roles:
+            logger.info("User %s attempted to access endpoint without sufficient permissions.", current_user.user_id)
             raise exceptions.InsufficientPermissions("Insufficient permissions.")
         return current_user
     return checker

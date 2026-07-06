@@ -6,6 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 from contextlib import contextmanager
 
+from app.logging_config import logger
+
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
 class Base(DeclarativeBase):
@@ -34,5 +36,6 @@ def transaction(db: Session):
         yield
         db.commit()
     except Exception:
+        logger.exception("Database transaction failed")
         db.rollback()
         raise

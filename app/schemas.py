@@ -70,6 +70,19 @@ class ProductRequest(BaseModel):
     def normalize_name(cls, name):
         return name.strip().capitalize()
 
+class ProductFilters(BaseModel):
+    page: int = Field(1, ge=1)
+    limit: int = Field(20, ge=1, le=100)
+
+    category: str | None = None
+    min_price: float | None = None
+    max_price: float | None = None
+    search: str | None = None
+    in_stock: bool | None = None
+
+    #sort
+    #order
+
 class ProductResponse(BaseModel):
     model_config =  ConfigDict(from_attributes=True)
 
@@ -79,6 +92,19 @@ class ProductResponse(BaseModel):
     description: str | None = None
     price: Decimal
     quantity: int
+
+class PaginatedProductResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    products: list[ProductResponse]
+    page: int
+    limit: int
+    total: int
+    pages: int
+    has_next: bool
+    has_previous: bool
+    next_page: int | None = None
+    previous_page: int | None = None
 
 class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=3, max_length=30)
