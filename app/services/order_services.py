@@ -49,7 +49,7 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
         total_price = validate_stock_return_total(items)
 
         # create order
-        order = Order(user_id=user_id, total_price=total_price, status=OrderStatus.PENDING, delivery_address=delivery_address)
+        order = Order(user_id=user_id, total_price=total_price, status=OrderStatus.PENDING_PAYMENT, delivery_address=delivery_address)
 
         # add to session and flush to generate order_id
         order_repository.add(db, order)

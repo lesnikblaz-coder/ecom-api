@@ -6,7 +6,7 @@ class UserRole(StrEnum):
     ADMIN = "admin"
 
 class OrderStatus(StrEnum):
-    PENDING = "pending"
+    PENDING_PAYMENT = "pending_payment"
     CONFIRMED = "confirmed"
     SHIPPED = "shipped"
     DELIVERED = "delivered"

@@ -75,7 +75,7 @@ class Order(Base):
     order_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.user_id"), nullable=False)
     total_price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
-    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False,  default=OrderStatus.PENDING)
+    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False,  default=OrderStatus.PENDING_PAYMENT)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     delivery_address: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -83,12 +83,12 @@ class Order(Base):
     user: Mapped[User] = relationship(back_populates="orders")
 
     def cancel(self) -> None:
-        if self.status not in (OrderStatus.PENDING, OrderStatus.CONFIRMED):
+        if self.status not in (OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED):
             raise InvalidOrderStateError("Order in uncancellable state.")
         self.status = OrderStatus.CANCELLED
 
     def confirm(self) -> None:
-        if self.status != OrderStatus.PENDING:
+        if self.status != OrderStatus.PENDING_PAYMENT:
             raise InvalidOrderStateError("Only pending orders can be confirmed.")
         self.status = OrderStatus.CONFIRMED
 
