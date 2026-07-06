@@ -11,3 +11,18 @@ class OrderStatus(StrEnum):
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCELLED = "cancelled"
+
+class PaymentStatus(StrEnum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    CANCELLED = "cancelled"
+    REFUNDED = "refunded"
+
+class Currency(StrEnum):
+    USD = "usd"
+    EUR = "eur"
+    GBP = "gbp"
+    CAD = "cad"
+    JPY = "jpy"
+    NZD = "nzd"

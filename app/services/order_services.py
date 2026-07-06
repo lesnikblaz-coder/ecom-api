@@ -17,6 +17,7 @@ def validate_stock_return_total(items: list[CartItem]) -> Decimal:
         if item.quantity > item.product.quantity:
             raise InsufficientStockError(f"Insufficient stock for {item.product.name} (ID: {item.product_id}).")
         total_price += (item.quantity * item.product.price)
+
     return total_price
 
 def create_order_items(item: CartItem, order: Order) -> OrderItem:
@@ -54,6 +55,9 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
         # add to session and flush to generate order_id
         order_repository.add(db, order)
         order_repository.flush(db)
+
+        # with the generated order_id we can create a payment (in my case, we update the stock and clear cart AFTER a payment was successful -
+         # in a real app i'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
 
         for item in items:
             # create order_item for each item in cart

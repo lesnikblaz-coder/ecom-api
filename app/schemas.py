@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 from decimal import Decimal
 from datetime import datetime
 
-from app.enums import UserRole, OrderStatus
+from app.enums import UserRole, OrderStatus, PaymentStatus
 
 
 # USER
@@ -166,3 +166,18 @@ class OrderResponse(BaseModel):
 
 class OrderCreate(BaseModel):
     delivery_address: str = Field(min_length=5)
+
+
+# PAYMENT
+class PaymentCreate(BaseModel):
+    order_id: int = Field(ge=1)
+
+class PaymentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    payment_id: int
+    order_id: int
+    amount: Decimal
+    status: PaymentStatus
+    provider: str
+    created_at: datetime

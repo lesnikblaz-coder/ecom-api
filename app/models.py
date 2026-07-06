@@ -4,7 +4,7 @@ from decimal import Decimal
 from datetime import datetime
 
 from app.database import Base
-from app.enums import UserRole, OrderStatus
+from app.enums import UserRole, OrderStatus, Currency, PaymentStatus
 from app.exceptions import InvalidOrderStateError
 
 class User(Base):
@@ -81,6 +81,7 @@ class Order(Base):
 
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
     user: Mapped[User] = relationship(back_populates="orders")
+    payments: Mapped[list["Payment"]] = relationship(back_populates="order", cascade="all, delete-orphan")
 
     def cancel(self) -> None:
         if self.status not in (OrderStatus.PENDING_PAYMENT, OrderStatus.CONFIRMED):
@@ -113,3 +114,18 @@ class OrderItem(Base):
 
     order: Mapped[Order] = relationship(back_populates="order_items")
     product: Mapped[Product] = relationship(back_populates="order_items")
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    payment_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    order_id: Mapped[int] = mapped_column(Integer, ForeignKey("orders.order_id"), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
+    currency: Mapped[Currency] = mapped_column(Enum(Currency), nullable=False)
+    provider: Mapped[str] = mapped_column(String, nullable=False)
+    provider_payment_id: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[PaymentStatus] = mapped_column(Enum(PaymentStatus), nullable=False, default=PaymentStatus.PENDING)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), server_onupdate=func.now(), nullable=False)
+
+    order: Mapped["Order"] = relationship(back_populates="payments")
