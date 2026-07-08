@@ -6,9 +6,11 @@ from app.models import Order, OrderItem, CartItem
 from app.repositories import order_repository
 from app.services.cart_services import cart_get
 from app.exceptions import EmptyCartError, InsufficientStockError, OrderNotFoundError
-from app.enums import OrderStatus
+from app.enums import OrderStatus, PaymentStatus
 from app.database import transaction
 from app.logging_config import logger
+from app.services import payment_services
+from app.integrations.payment_result import PaymentResult
 
 # helpers
 def validate_stock_return_total(items: list[CartItem]) -> Decimal:
@@ -57,22 +59,31 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
         order_repository.flush(db)
 
         # with the generated order_id we can create a payment (in my case, we update the stock and clear cart AFTER a payment was successful -
-         # in a real app i'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
+         # in a real app I'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
+        payment_result: PaymentResult = payment_services.process_payment(db, order)
 
-        for item in items:
-            # create order_item for each item in cart
-            order_item = create_order_items(item, order)
+        if payment_result.status == PaymentStatus.SUCCESS:
+            for item in items:
+                # create order_item for each item in cart
+                order_item = create_order_items(item, order)
 
-            # add to order_item database
-            order_repository.add(db, order_item)
+                # add to order_item database
+                order_repository.add(db, order_item)
 
-            # remove from stock
-            item.product.quantity -= item.quantity
+                # remove from stock
+                item.product.quantity -= item.quantity
 
-            # clear cart
-            order_repository.delete_return_only(db, item)
+                # clear cart
+                order_repository.delete_return_only(db, item)
 
-    logger.info("Order created id=%s user=%s total=%s", order.order_id, user_id, order.total_price)
+            order.status = OrderStatus.CONFIRMED
+
+    logger.info("Order created id=%s user=%s total=%s, status=%s",
+                order.order_id,
+                user_id,
+                order.total_price,
+                order.status
+                )
     return order
 
 def cancel(db: Session, order_id: int, user_id: int) -> Order:
