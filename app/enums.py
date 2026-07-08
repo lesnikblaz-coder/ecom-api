@@ -18,6 +18,7 @@ class PaymentStatus(StrEnum):
     SUCCESS = "success"
     CANCELLED = "cancelled"
     REFUNDED = "refunded"
+    FAILED = "failed"
 
 class Currency(StrEnum):
     USD = "usd"
