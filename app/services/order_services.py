@@ -6,9 +6,11 @@ from app.models import Order, OrderItem, CartItem
 from app.repositories import order_repository
 from app.services.cart_services import cart_get
 from app.exceptions import EmptyCartError, InsufficientStockError, OrderNotFoundError
-from app.enums import OrderStatus
+from app.enums import OrderStatus, PaymentStatus
 from app.database import transaction
 from app.logging_config import logger
+from app.services import payment_services
+from app.integrations.payment_result import PaymentResult
 
 # helpers
 def validate_stock_return_total(items: list[CartItem]) -> Decimal:
@@ -17,6 +19,7 @@ def validate_stock_return_total(items: list[CartItem]) -> Decimal:
         if item.quantity > item.product.quantity:
             raise InsufficientStockError(f"Insufficient stock for {item.product.name} (ID: {item.product_id}).")
         total_price += (item.quantity * item.product.price)
+
     return total_price
 
 def create_order_items(item: CartItem, order: Order) -> OrderItem:
@@ -49,26 +52,38 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
         total_price = validate_stock_return_total(items)
 
         # create order
-        order = Order(user_id=user_id, total_price=total_price, status=OrderStatus.PENDING, delivery_address=delivery_address)
+        order = Order(user_id=user_id, total_price=total_price, status=OrderStatus.PENDING_PAYMENT, delivery_address=delivery_address)
 
         # add to session and flush to generate order_id
         order_repository.add(db, order)
         order_repository.flush(db)
 
-        for item in items:
-            # create order_item for each item in cart
-            order_item = create_order_items(item, order)
+        # with the generated order_id we can create a payment (in my case, we update the stock and clear cart AFTER a payment was successful -
+         # in a real app I'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
+        payment_result: PaymentResult = payment_services.process_payment(db, order)
 
-            # add to order_item database
-            order_repository.add(db, order_item)
+        if payment_result.status == PaymentStatus.SUCCESS:
+            for item in items:
+                # create order_item for each item in cart
+                order_item = create_order_items(item, order)
 
-            # remove from stock
-            item.product.quantity -= item.quantity
+                # add to order_item database
+                order_repository.add(db, order_item)
 
-            # clear cart
-            order_repository.delete_return_only(db, item)
+                # remove from stock
+                item.product.quantity -= item.quantity
 
-    logger.info("Order created id=%s user=%s total=%s", order.order_id, user_id, order.total_price)
+                # clear cart
+                order_repository.delete_return_only(db, item)
+
+            order.status = OrderStatus.CONFIRMED
+
+    logger.info("Order created id=%s user=%s total=%s, status=%s",
+                order.order_id,
+                user_id,
+                order.total_price,
+                order.status
+                )
     return order
 
 def cancel(db: Session, order_id: int, user_id: int) -> Order:
