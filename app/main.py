@@ -11,7 +11,7 @@ from app import models
 
 from app.database import get_db
 from app.exception_handlers import register_exception_handlers
-from app.services import auth_services, user_services, category_services, product_services, cart_services, order_services
+from app.services import auth_services, user_services, category_services, product_services, cart_services, order_services, payment_services
 
 app = FastAPI()
 register_exception_handlers(app)
@@ -141,6 +141,10 @@ def order_create(db: db_session, data: schemas.OrderCreate, current_user: models
 def order_get(db: db_session, order_id: int, current_user: models.User = Depends(auth.get_current_user)):
     return order_services.order_get_by_user(db, order_id, current_user.user_id)
 
+@app.delete("/orders/{order_id}", status_code=204)
+def order_delete(db: db_session, order_id: int, _: models.User = Depends(auth.require_admin)) -> None:
+    order_services.order_delete(db, order_id)
+
 @app.post("/orders/{order_id}/cancel", response_model=schemas.OrderResponse)
 def order_cancel(db: db_session, order_id: int, current_user: models.User = Depends(auth.get_current_user)) -> models.Order:
     return order_services.cancel(db, order_id, current_user.user_id)
@@ -156,3 +160,13 @@ def order_ship(db: db_session, order_id: int, data: schemas.UserIdRequest, _: mo
 @app.post("/orders/{order_id}/delivered", response_model=schemas.OrderResponse) # STAFF +
 def order_delivered(db: db_session, order_id: int, data: schemas.UserIdRequest, _: models.User = Depends(auth.require_staff)) -> models.Order:
     return order_services.delivered(db, order_id, data.user_id)
+
+@app.get("/orders/{order_id}/payments", response_model=list[schemas.PaymentResponse])
+def order_get_payments(db: db_session, order_id: int, _: models.User = Depends(auth.get_current_user)) -> Sequence[models.Payment]:
+    return payment_services.payments_for_order(db, order_id)
+
+
+# PAYMENTS
+@app.post("/payments/{order_id}/retry", response_model=schemas.PaymentResponse)
+def payment_retry(db: db_session, order_id: int, _: models.User = Depends(auth.get_current_user)) -> models.Payment:
+    return payment_services.payment_retry(db, order_id)

@@ -6,8 +6,9 @@ from app.enums import PaymentStatus
 from app.integrations.payment_result import PaymentResult
 
 class MockPaymentGateway(PaymentGateway):
-    def __init__(self):
-        self.provider = "mock"
+    @property
+    def provider(self) -> str:
+        return "mock"
 
     def charge(self, payment: Payment) -> PaymentResult:
         if random() < 0.7:
@@ -15,6 +16,22 @@ class MockPaymentGateway(PaymentGateway):
                 status=PaymentStatus.SUCCESS,
                 provider_payment_id="mock_123456"
             )
+        return PaymentResult(
+            status=PaymentStatus.FAILED,
+            provider_payment_id="mock_654321"
+        )
+
+    # just for testing
+    @staticmethod
+    def charge_success(payment: Payment) -> PaymentResult:
+        return PaymentResult(
+            status=PaymentStatus.SUCCESS,
+            provider_payment_id="mock_123456"
+        )
+
+    # just for testing
+    @staticmethod
+    def charge_failure(payment: Payment) -> PaymentResult:
         return PaymentResult(
             status=PaymentStatus.FAILED,
             provider_payment_id="mock_654321"

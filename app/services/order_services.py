@@ -3,14 +3,14 @@ from collections.abc import Sequence
 from decimal import Decimal
 
 from app.models import Order, OrderItem, CartItem
-from app.repositories import order_repository
+from app.repositories import order_repository, payment_repository
 from app.services.cart_services import cart_get
 from app.exceptions import EmptyCartError, InsufficientStockError, OrderNotFoundError
 from app.enums import OrderStatus, PaymentStatus
 from app.database import transaction
 from app.logging_config import logger
-from app.services import payment_services
 from app.integrations.payment_result import PaymentResult
+from app.services import payment_services
 
 # helpers
 def validate_stock_return_total(items: list[CartItem]) -> Decimal:
@@ -36,7 +36,7 @@ def orders_get_by_user(db: Session, user_id: int) -> Sequence[Order]:
     return order_repository.orders_get(db, user_id)
 
 def order_get_by_user(db: Session, order_id: int, user_id: int) -> Order:
-    order = order_repository.order_get_by_id(db, order_id, user_id)
+    order = order_repository.order_get_by_id_plus_user(db, order_id, user_id)
     if not order:
         raise OrderNotFoundError("Order not found.")
     return order
@@ -58,18 +58,35 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
         order_repository.add(db, order)
         order_repository.flush(db)
 
+        for item in items:
+            # create order_item for each item in cart
+            order_item = create_order_items(item, order)
+
+            # add to order_item database
+            order_repository.add(db, order_item)
+
         # with the generated order_id we can create a payment (in my case, we update the stock and clear cart AFTER a payment was successful -
          # in a real app I'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
-        payment_result: PaymentResult = payment_services.process_payment(db, order)
+        payment = payment_services.create_payment(db, order)
+
+    payment_result: PaymentResult = payment_services.process_payment(payment)
+
+    with transaction(db):
+        payment.status = payment_result.status
+        payment.provider_payment_id = payment_result.provider_payment_id
+
+        payment = payment_repository.payment_update(db, payment)
+        logger.info("Payment charge id=%s, status=%s, amount=%s, currency=%s, provider=%s, updated_at=%s",
+                    payment.payment_id,
+                    payment.status,
+                    payment.amount,
+                    payment.currency,
+                    payment.provider,
+                    payment.updated_at
+                    )
 
         if payment_result.status == PaymentStatus.SUCCESS:
             for item in items:
-                # create order_item for each item in cart
-                order_item = create_order_items(item, order)
-
-                # add to order_item database
-                order_repository.add(db, order_item)
-
                 # remove from stock
                 item.product.quantity -= item.quantity
 
@@ -120,3 +137,13 @@ def delivered(db: Session, order_id: int, user_id: int) -> Order:
 
     logger.info("Delivered order %s by user %s", order_id, user_id)
     return order
+
+def order_delete(db: Session, order_id: int) -> None:
+    with transaction(db):
+        order = order_repository.order_get_by_id(db, order_id)
+
+        if not order:
+            raise OrderNotFoundError("Order not found.")
+
+        logger.info("Order deleted id=%s", order.order_id)
+        order_repository.delete_return_only(db, order)

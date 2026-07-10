@@ -4,6 +4,10 @@ from app.models import Payment
 from app.integrations.payment_result import PaymentResult
 
 class PaymentGateway(ABC):
+    @property
+    @abstractmethod
+    def provider(self) -> str:
+        pass
 
     @abstractmethod
     def charge(self, payment: Payment) -> PaymentResult:
