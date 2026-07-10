@@ -12,8 +12,8 @@ from app.logging_config import logger
 from app.integrations.payment_result import PaymentResult
 from app.services import payment_services
 
-# helpers
-def validate_stock_return_total(items: list[CartItem]) -> Decimal:
+# internal helpers
+def _validate_stock_and_calculate_total(items: list[CartItem]) -> Decimal:
     total_price = Decimal("0")
     for item in items:
         if item.quantity > item.product.quantity:
@@ -22,7 +22,7 @@ def validate_stock_return_total(items: list[CartItem]) -> Decimal:
 
     return total_price
 
-def create_order_items(item: CartItem, order: Order) -> OrderItem:
+def _create_order_items(item: CartItem, order: Order) -> OrderItem:
     return OrderItem(
         order_id=order.order_id,
         product_id=item.product_id,
@@ -49,7 +49,7 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
             raise EmptyCartError("Cart is empty.")
 
         # validate stock + append to total_price
-        total_price = validate_stock_return_total(items)
+        total_price = _validate_stock_and_calculate_total(items)
 
         # create order
         order = Order(user_id=user_id, total_price=total_price, status=OrderStatus.PENDING_PAYMENT, delivery_address=delivery_address)
@@ -60,7 +60,7 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
 
         for item in items:
             # create order_item for each item in cart
-            order_item = create_order_items(item, order)
+            order_item = _create_order_items(item, order)
 
             # add to order_item database
             order_repository.add(db, order_item)
