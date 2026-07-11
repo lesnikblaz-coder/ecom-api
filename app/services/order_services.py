@@ -11,6 +11,7 @@ from app.database import transaction
 from app.logging_config import logger
 from app.integrations.payment_result import PaymentResult
 from app.services import payment_services
+from app.integrations.payment_gateway import PaymentGateway
 
 # internal helpers
 def _validate_stock_and_calculate_total(items: list[CartItem]) -> Decimal:
@@ -41,7 +42,7 @@ def order_get_by_user(db: Session, order_id: int, user_id: int) -> Order:
         raise OrderNotFoundError("Order not found.")
     return order
 
-def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
+def checkout(db: Session, user_id: int, delivery_address: str, gateway: PaymentGateway) -> Order:
     with transaction(db):
         cart = cart_get(db, user_id)
         items = cart.cart_items
@@ -67,9 +68,9 @@ def checkout(db: Session, user_id: int, delivery_address: str) -> Order:
 
         # with the generated order_id we can create a payment (in my case, we update the stock and clear cart AFTER a payment was successful -
          # in a real app I'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
-        payment = payment_services.create_payment(db, order)
+        payment = payment_services.create_payment(db, order, gateway.provider)
 
-    payment_result: PaymentResult = payment_services.process_payment(payment)
+    payment_result: PaymentResult = payment_services.process_payment(payment, gateway)
 
     with transaction(db):
         payment.status = payment_result.status

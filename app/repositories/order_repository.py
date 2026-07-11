@@ -20,6 +20,7 @@ def order_get_by_id_plus_user(db: Session, order_id: int, user_id: int) -> Order
 def order_get_by_id(db: Session, order_id: int) -> Order | None:
     return db.scalar(select(Order)
                      .where(Order.order_id == order_id)
+                     .options(selectinload(Order.order_items).selectinload(OrderItem.product))
                      )
 
 def flush(db: Session) -> None:

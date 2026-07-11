@@ -1,3 +1,9 @@
-from app.integrations.mock_payment_gateway import MockPaymentGateway
+from app.integrations.payment_gateway import PaymentGateway
+from app.integrations.mock_payment_gateway import (
+    MockPaymentGateway,
+    SuccessPaymentGateway,
+    FailPaymentGateway
+)
 
-gateway = MockPaymentGateway()
+def get_payment_gateway() -> PaymentGateway:
+    return SuccessPaymentGateway()

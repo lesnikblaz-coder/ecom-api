@@ -21,18 +21,24 @@ class MockPaymentGateway(PaymentGateway):
             provider_payment_id="mock_654321"
         )
 
-    # just for testing
-    @staticmethod
-    def charge_success(payment: Payment) -> PaymentResult:
+class SuccessPaymentGateway(PaymentGateway):
+    @property
+    def provider(self) -> str:
+        return "mock"
+
+    def charge(self, payment: Payment) -> PaymentResult:
         return PaymentResult(
             status=PaymentStatus.SUCCESS,
-            provider_payment_id="mock_123456"
+            provider_payment_id="mock_success_12345"
         )
 
-    # just for testing
-    @staticmethod
-    def charge_failure(payment: Payment) -> PaymentResult:
+class FailPaymentGateway(PaymentGateway):
+    @property
+    def provider(self) -> str:
+        return "mock"
+
+    def charge(self, payment: Payment) -> PaymentResult:
         return PaymentResult(
             status=PaymentStatus.FAILED,
-            provider_payment_id="mock_654321"
+            provider_payment_id="mock_fail_54321"
         )
