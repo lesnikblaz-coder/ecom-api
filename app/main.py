@@ -158,10 +158,6 @@ def order_delete(db: db_session, order_id: int, _: models.User = Depends(auth.re
 def order_cancel(db: db_session, order_id: int, current_user: models.User = Depends(auth.get_current_user)) -> models.Order:
     return order_services.cancel(db, order_id, current_user.user_id)
 
-@app.post("/orders/{order_id}/confirm", response_model=schemas.OrderResponse) # STAFF +
-def order_confirm(db: db_session, order_id: int, data: schemas.UserIdRequest, _: models.User = Depends(auth.require_staff)) -> models.Order:
-    return order_services.confirm(db, order_id, data.user_id)
-
 @app.post("/orders/{order_id}/ship", response_model=schemas.OrderResponse) # STAFF +
 def order_ship(db: db_session, order_id: int, data: schemas.UserIdRequest, _: models.User = Depends(auth.require_staff)) -> models.Order:
     return order_services.ship(db, order_id, data.user_id)

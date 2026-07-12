@@ -114,14 +114,6 @@ def cancel(db: Session, order_id: int, user_id: int) -> Order:
     logger.info("Cancelled order %s by user %s", order_id, user_id)
     return order
 
-def confirm(db: Session, order_id: int, user_id: int) -> Order:
-    with transaction(db):
-        order = order_get_by_user(db, order_id, user_id)
-        order.confirm()
-
-    logger.info("Confirmed order %s by user %s", order_id, user_id)
-    return order
-
 def ship(db: Session, order_id: int, user_id: int) -> Order:
     with transaction(db):
         order = order_get_by_user(db, order_id, user_id)
