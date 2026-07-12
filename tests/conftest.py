@@ -3,7 +3,7 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, select, event
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
@@ -12,6 +12,9 @@ from app.main import app
 from app.auth import get_current_user
 from app.models import User, Order
 from app.enums import OrderStatus
+from app.services.payment_services import PaymentService
+from app.dependencies import get_payment_service
+from app.integrations.mock_payment_gateway import SuccessPaymentGateway, FailPaymentGateway
 
 load_dotenv(Path(__file__).resolve().parent / ".env.test")
 
@@ -56,7 +59,7 @@ def auth_user(test_db):
     test_db.flush()
     return user
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def client(test_db, auth_user):
     def override_get_db():
         yield test_db
@@ -64,8 +67,33 @@ def client(test_db, auth_user):
     def override_auth():
         return auth_user
 
+    def override_payment_service_success():
+        print("USING SUCCESS GATEWAY")
+        return PaymentService(gateway=SuccessPaymentGateway())
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_auth
+    app.dependency_overrides[get_payment_service] = override_payment_service_success
+
+    yield TestClient(app)
+
+    app.dependency_overrides.clear()
+
+@pytest.fixture(scope="function")
+def client_fail(test_db, auth_user):
+    def override_get_db():
+        yield test_db
+
+    def override_auth():
+        return auth_user
+
+    def override_payment_service_fail():
+        print("USING FAIL GATEWAY")
+        return PaymentService(gateway=FailPaymentGateway())
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = override_auth
+    app.dependency_overrides[get_payment_service] = override_payment_service_fail
 
     yield TestClient(app)
 
@@ -115,13 +143,12 @@ def create_order(client, create_cart_item):
     return response.json()
 
 @pytest.fixture()
-def create_order_confirmed(client, create_order, test_db):
-    order = test_db.scalar(select(Order).where(Order.order_id == create_order["order_id"]))
-
-    order.status = OrderStatus.CONFIRMED
-    test_db.flush()
-
-    return create_order
+def create_order_pending(client_fail, create_cart_item):
+    response = client_fail.post("/orders", json={
+        "delivery_address": "123 Test Street, Test City"
+    })
+    assert response.status_code == 201
+    return response.json()
 
 @pytest.fixture()
 def create_order_shipped(client, create_order, test_db):
