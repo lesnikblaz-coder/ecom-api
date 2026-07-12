@@ -1,5 +1,5 @@
 from app.services.payment_services import PaymentService
-from app.integrations.mock_payment_gateway import MockPaymentGateway, SuccessPaymentGateway, FailPaymentGateway
+from app.integrations.mock_payment_gateway import MockPaymentGateway
 
 def get_payment_service():
 
