@@ -1,5 +1,5 @@
 from sqlalchemy import Sequence
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Order, Payment
 from app.repositories import payment_repository, order_repository
@@ -15,7 +15,7 @@ class PaymentService:
     def __init__(self, gateway: PaymentGateway):
         self.gateway = gateway
 
-    def create_payment(self, db: Session, order: Order) -> Payment:
+    async def create_payment(self, db: AsyncSession, order: Order) -> Payment:
         # create payment
         payment = Payment(
             order_id=order.order_id,
@@ -23,7 +23,7 @@ class PaymentService:
             currency=Currency.USD,
             provider=self.gateway.provider
         )
-        payment = payment_repository.payment_create(db, payment)
+        payment = await payment_repository.payment_create(db, payment)
         logger.info("Payment created id=%s, amount=%s, currency=%s, created_at=%s",
                     payment.payment_id,
                     payment.amount,
@@ -36,24 +36,24 @@ class PaymentService:
     def process_payment(self, payment: Payment) -> PaymentResult:
         return self.gateway.charge(payment)
 
-    def payment_retry(self, db: Session, order_id: int, user_id: int) -> Payment:
-        with transaction(db):
-            order = order_repository.order_get_by_id_plus_user(db, order_id, user_id)
+    async def payment_retry(self, db: AsyncSession, order_id: int, user_id: int) -> Payment:
+        async with transaction(db):
+            order = await order_repository.order_get_by_id_plus_user(db, order_id, user_id)
             if not order:
                 raise OrderNotFoundError("Order not found.")
 
             if order.status != OrderStatus.PENDING_PAYMENT:
                 raise InvalidOrderStateError("Invalid order state.")
 
-            payment = self.create_payment(db, order)
+            payment = await self.create_payment(db, order)
 
         payment_result = self.process_payment(payment)
 
-        with transaction(db):
+        async with transaction(db):
             payment.status = payment_result.status
             payment.provider_payment_id = payment_result.provider_payment_id
 
-            payment = payment_repository.payment_update(db, payment)
+            payment = await payment_repository.payment_update(db, payment)
             logger.info("Payment charge id=%s, status=%s, amount=%s, currency=%s, provider=%s, updated_at=%s",
                         payment.payment_id,
                         payment.status,
@@ -63,7 +63,7 @@ class PaymentService:
                         payment.updated_at
                         )
 
-            cart = cart_get(db, user_id)
+            cart = await cart_get(db, user_id)
             items = cart.cart_items
 
             if payment_result.status == PaymentStatus.SUCCESS:
@@ -72,10 +72,10 @@ class PaymentService:
                     item.product.quantity -= item.quantity
 
                     # clear cart
-                    order_repository.delete_return_only(db, item)
+                    await order_repository.delete_return_only(db, item)
                 order.status = OrderStatus.CONFIRMED
 
         return payment
 
-def payments_for_order(db: Session, order_id: int) -> Sequence[Payment]:
+def payments_for_order(db: AsyncSession, order_id: int) -> Sequence[Payment]:
     return payment_repository.payments_for_order(db, order_id)
