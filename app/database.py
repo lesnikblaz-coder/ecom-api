@@ -2,9 +2,9 @@ import os
 
 from pathlib import Path
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
-from contextlib import contextmanager
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
+from contextlib import asynccontextmanager
 
 from app.logging_config import logger
 
@@ -13,29 +13,26 @@ load_dotenv(Path(__file__).resolve().parent / ".env")
 class Base(DeclarativeBase):
     pass
 
-DATABASE_URL = (f"postgresql+psycopg2://"
+DATABASE_URL = (f"postgresql+asyncpg://"
                 f"{os.getenv("DB_USER")}:"
                 f"{os.getenv("DB_PASSWORD")}@"
                 f"{os.getenv("DB_HOST")}:"
                 f"{os.getenv("DB_PORT")}/"
                 f"{os.getenv("DB_NAME")}")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
+engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
 
-def get_db():
-    db = SessionLocal()
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
+
+@asynccontextmanager
+async def transaction(db: AsyncSession):
     try:
         yield db
-    finally:
-        db.close()
-
-@contextmanager
-def transaction(db: Session):
-    try:
-        yield
-        db.commit()
+        await db.commit()
     except Exception:
         logger.exception("Database transaction failed")
-        db.rollback()
+        await db.rollback()
         raise
