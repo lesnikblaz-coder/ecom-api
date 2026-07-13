@@ -6,7 +6,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timezone, timedelta
 from jose import jwt, JWTError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import exceptions
 from app import enums
@@ -40,14 +40,14 @@ def get_token(user_id: int) -> str:
     payload = {"sub": str(user_id), "exp": expire}
     return jwt.encode(payload, SECRET_KEY, ALGORITHM)
 
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+async def get_current_user(db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
         decoded_payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = int(decoded_payload["sub"])
     except(JWTError, KeyError):
         raise exceptions.InvalidTokenError("Invalid token.")
 
-    user = user_repository.user_get_by_id(db, user_id)
+    user = await user_repository.user_get_by_id(db, user_id)
     if not user:
         raise exceptions.UserNotFoundError("User not found.")
     return user

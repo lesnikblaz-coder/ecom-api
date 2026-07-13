@@ -1,12 +1,11 @@
-from typing import cast
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import Sequence
 
 from app.models import Product
 from app.schemas import ProductUpdate, ProductFilters
 
-def products_get(db: Session, filters: ProductFilters, offset: int, limit: int) -> tuple[Sequence[Product], int]:
+async def products_get(db: AsyncSession, filters: ProductFilters, offset: int, limit: int) -> tuple[Sequence[Product], int]:
     query = select(Product)
 
     if filters.category:
@@ -24,37 +23,43 @@ def products_get(db: Session, filters: ProductFilters, offset: int, limit: int) 
     if filters.in_stock:
         query = query.where(Product.quantity >= 1)
 
-    if filters.in_stock == False:
+    if filters.in_stock is False:
         query = query.where(Product.quantity == 0)
 
     count_query = select(func.count()).select_from(query.subquery())
-    total = cast(int, db.scalar(count_query))
+    result_total = await db.execute(count_query)
+    total = result_total.scalar_one()
 
     query = query.offset(offset)
     query = query.limit(limit)
 
-    products = db.scalars(query).all()
+    result = await db.execute(query)
+    products = result.scalars().all()
 
     return products, total
 
-def product_get(db: Session, product_id: int) -> Product | None:
-    return db.scalar(select(Product).where(Product.product_id == product_id))
+async def product_get(db: AsyncSession, product_id: int) -> Product | None:
+    result = await db.execute(
+        select(Product)
+        .where(Product.product_id == product_id)
+    )
+    return result.scalar_one_or_none()
 
-def product_create(db: Session, product: Product) -> Product:
+async def product_create(db: AsyncSession, product: Product) -> Product:
     db.add(product)
-    db.commit()
-    db.refresh(product)
+    await db.commit()
+    await db.refresh(product)
     return product
 
-def product_update(db: Session, product: Product, data: ProductUpdate) -> Product:
+async def product_update(db: AsyncSession, product: Product, data: ProductUpdate) -> Product:
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(product, field, value)
 
-    db.commit()
-    db.refresh(product)
+    await db.commit()
+    await db.refresh(product)
     return product
 
-def product_delete(db: Session, product: Product) -> None:
-    db.delete(product)
-    db.commit()
+async def product_delete(db: AsyncSession, product: Product) -> None:
+    await db.delete(product)
+    await db.commit()

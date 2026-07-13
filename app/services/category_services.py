@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from collections.abc import Sequence
 
 from app.models import Category
@@ -7,31 +7,31 @@ from app.exceptions import CategoryNotFoundError, CategoryAlreadyExistsError
 from app.schemas import CategoryUpdate
 from app.logging_config import logger
 
-def categories_get(db: Session) -> Sequence[Category]:
-    return category_repository.categories_get(db)
+async def categories_get(db: AsyncSession) -> Sequence[Category]:
+    return await category_repository.categories_get(db)
 
-def category_get(db: Session, category_id: int) -> Category:
-    category = category_repository.category_get(db, category_id)
+async def category_get(db: AsyncSession, category_id: int) -> Category:
+    category = await category_repository.category_get(db, category_id)
     if not category:
         raise CategoryNotFoundError("Category not found.")
     return category
 
-def category_create(db: Session, name: str) -> Category:
-    if category_repository.category_get_by_name(db, name):
+async def category_create(db: AsyncSession, name: str) -> Category:
+    if await category_repository.category_get_by_name(db, name):
         raise CategoryAlreadyExistsError("Category already exists.")
 
     category = Category(name=name)
-    category = category_repository.category_create(db, category)
+    category = await category_repository.category_create(db, category)
 
     logger.info("Category %s created", category.category_id)
     return category
 
-def category_update(db: Session, category_id: int, data: CategoryUpdate) -> Category:
-    category = category_get(db, category_id)
+async def category_update(db: AsyncSession, category_id: int, data: CategoryUpdate) -> Category:
+    category = await category_get(db, category_id)
     logger.info("Category %s updated", category.category_id)
-    return category_repository.category_update(db, category, data)
+    return await category_repository.category_update(db, category, data)
 
-def category_delete(db: Session, category_id: int) -> None:
-    category = category_get(db, category_id)
-    category_repository.category_delete(db, category)
+async def category_delete(db: AsyncSession, category_id: int) -> None:
+    category = await category_get(db, category_id)
+    await category_repository.category_delete(db, category)
     logger.info("Category %s deleted", category.category_id)

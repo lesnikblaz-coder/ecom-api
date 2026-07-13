@@ -1,36 +1,45 @@
 from collections.abc import Sequence
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
 from app.schemas import UserUpdate
 
-def user_get_by_id(db: Session, user_id: int) -> User | None:
-    return db.scalar(select(User).where(User.user_id == user_id))
+async def user_get_by_id(db: AsyncSession, user_id: int) -> User | None:
+    result = await db.execute(
+        select(User)
+        .where(User.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
 
-def user_get_by_email(db: Session, email: str) -> User | None:
-    return db.scalar(select(User).where(User.email == email))
+async def user_get_by_email(db: AsyncSession, email: str) -> User | None:
+    result = await db.execute(
+        select(User)
+        .where(User.email == email)
+    )
+    return result.scalar_one_or_none()
 
-def user_create(db: Session, user: User) -> User:
+async def user_create(db: AsyncSession, user: User) -> User:
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
-def users_get(db: Session) -> Sequence[User]:
-    return db.scalars(select(User)).all()
+async def users_get(db: AsyncSession) -> Sequence[User]:
+    result = await db.execute(select(User))
+    return result.scalars().all()
 
-def user_update(db: Session, user: User, data: UserUpdate) -> User:
+async def user_update(db: AsyncSession, user: User, data: UserUpdate) -> User:
     update_data = data.model_dump(exclude_unset=True)
 
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
-def user_delete(db: Session, user: User) -> User:
-    db.delete(user)
-    db.commit()
+async def user_delete(db: AsyncSession, user: User) -> User:
+    await db.delete(user)
+    await db.commit()
     return user
