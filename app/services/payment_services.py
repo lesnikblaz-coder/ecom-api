@@ -77,5 +77,5 @@ class PaymentService:
 
         return payment
 
-def payments_for_order(db: AsyncSession, order_id: int) -> Sequence[Payment]:
-    return payment_repository.payments_for_order(db, order_id)
+async def payments_for_order(db: AsyncSession, order_id: int) -> Sequence[Payment]:
+    return await payment_repository.payments_for_order(db, order_id)
