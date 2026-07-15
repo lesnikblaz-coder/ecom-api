@@ -67,7 +67,7 @@ async def checkout(db: AsyncSession, user_id: int, delivery_address: str, gatewa
 
         # with the generated order_id we can create a payment (in my case, we update the stock and clear cart AFTER a payment was successful -
          # in a real app I'd set those products as reserved to prevent selling more items than in stock if 2 or more orders happen to happen simultaneously)
-        payment = gateway.create_payment(db, order)
+        payment = await gateway.create_payment(db, order)
 
     payment_result: PaymentResult = gateway.process_payment(payment)
 
