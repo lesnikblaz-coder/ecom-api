@@ -29,7 +29,7 @@ async def category_get_by_name(db: AsyncSession, name: str) -> Category | None:
 
 async def category_create(db: AsyncSession, category: Category) -> Category:
     db.add(category)
-    await db.commit()
+    await db.flush()
     await db.refresh(category)
     return category
 
@@ -38,10 +38,10 @@ async def category_update(db: AsyncSession, category: Category, data: schemas.Ca
     for field, value in update_data.items():
         setattr(category, field, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(category)
     return category
 
 async def category_delete(db: AsyncSession, category: Category) -> None:
     await db.delete(category)
-    await db.commit()
+    await db.flush()

@@ -7,6 +7,7 @@ from app.schemas import ProductUpdate, ProductFilters, PaginatedProductResponse,
 from app.models import Product
 from app.exceptions import ProductNotFoundError, CategoryNotFoundError
 from app.logging_config import logger
+from app.database import transaction
 
 async def products_get(db: AsyncSession, filters: ProductFilters) -> PaginatedProductResponse:
     limit = filters.limit
@@ -36,22 +37,24 @@ async def product_get(db: AsyncSession, product_id: int) -> Product:
     return product
 
 async def product_create(db: AsyncSession, category_id: int, name: str, description: str, price: Decimal, quantity: int) -> Product:
-    if not await category_repository.category_get(db, category_id):
-        raise CategoryNotFoundError("Category not found.")
+    async with transaction(db):
+        if not await category_repository.category_get(db, category_id):
+            raise CategoryNotFoundError("Category not found.")
 
-    product = Product(category_id=category_id, name=name, description=description, price=price, quantity=quantity)
-    product = await product_repository.product_create(db, product)
+        product = Product(category_id=category_id, name=name, description=description, price=price, quantity=quantity)
+        product = await product_repository.product_create(db, product)
 
-    logger.info("Product created id=%s name=%s", product.product_id, product.name)
-    return product
+        logger.info("Product created id=%s name=%s", product.product_id, product.name)
+        return product
 
 async def product_update(db: AsyncSession, product_id: int, data: ProductUpdate) -> Product:
-    product = await product_get(db, product_id)
-
-    logger.info("Product updated id=%s", product_id)
-    return await product_repository.product_update(db, product, data)
+    async with transaction(db):
+        product = await product_get(db, product_id)
+        logger.info("Product updated id=%s", product_id)
+        return await product_repository.product_update(db, product, data)
 
 async def product_delete(db: AsyncSession, product_id: int) -> None:
-    product = await product_get(db, product_id)
-    await product_repository.product_delete(db, product)
-    logger.info("Product %s deleted", product_id)
+    async with transaction(db):
+        product = await product_get(db, product_id)
+        await product_repository.product_delete(db, product)
+        logger.info("Product %s deleted", product_id)

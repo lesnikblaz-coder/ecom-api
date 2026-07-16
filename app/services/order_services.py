@@ -30,7 +30,6 @@ def _create_order_items(item: CartItem, order: Order) -> OrderItem:
         unit_price=item.product.price
     )
 
-
 # business
 async def orders_get_by_user(db: AsyncSession, user_id: int) -> Sequence[Order]:
     return await order_repository.orders_get(db, user_id)
@@ -101,7 +100,8 @@ async def checkout(db: AsyncSession, user_id: int, delivery_address: str, gatewa
                 order.total_price,
                 order.status
                 )
-    return order
+
+    return await order_repository.order_get_by_id(db, order.order_id)
 
 async def cancel(db: AsyncSession, order_id: int, user_id: int) -> Order:
     async with transaction(db):
