@@ -21,7 +21,7 @@ async def user_get_by_email(db: AsyncSession, email: str) -> User | None:
 
 async def user_create(db: AsyncSession, user: User) -> User:
     db.add(user)
-    await db.commit()
+    await db.flush()
     await db.refresh(user)
     return user
 
@@ -35,11 +35,11 @@ async def user_update(db: AsyncSession, user: User, data: UserUpdate) -> User:
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(user)
     return user
 
 async def user_delete(db: AsyncSession, user: User) -> User:
     await db.delete(user)
-    await db.commit()
+    await db.flush()
     return user

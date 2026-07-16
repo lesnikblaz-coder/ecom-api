@@ -47,7 +47,7 @@ async def product_get(db: AsyncSession, product_id: int) -> Product | None:
 
 async def product_create(db: AsyncSession, product: Product) -> Product:
     db.add(product)
-    await db.commit()
+    await db.flush()
     await db.refresh(product)
     return product
 
@@ -56,10 +56,10 @@ async def product_update(db: AsyncSession, product: Product, data: ProductUpdate
     for field, value in update_data.items():
         setattr(product, field, value)
 
-    await db.commit()
+    await db.flush()
     await db.refresh(product)
     return product
 
 async def product_delete(db: AsyncSession, product: Product) -> None:
     await db.delete(product)
-    await db.commit()
+    await db.flush()
