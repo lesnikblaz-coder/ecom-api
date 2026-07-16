@@ -6,6 +6,7 @@ from app.repositories import user_repository
 from app.exceptions import UserNotFoundError
 from app.schemas import UserUpdate
 from app.logging_config import logger
+from app.database import transaction
 
 async def users_get(db: AsyncSession) -> Sequence[User]:
     return await user_repository.users_get(db)
@@ -17,11 +18,13 @@ async def user_get(db: AsyncSession, user_id: int) -> User:
     return user
 
 async def user_update(db: AsyncSession, user_id: int, data: UserUpdate) -> User:
-    user = await user_get(db, user_id)
-    logger.info("User %s updated", user_id)
-    return await user_repository.user_update(db, user, data)
+    async with transaction(db):
+        user = await user_get(db, user_id)
+        logger.info("User %s updated", user_id)
+        return await user_repository.user_update(db, user, data)
 
 async def user_delete(db: AsyncSession, user_id: int) -> User:
-    user = await user_get(db, user_id)
-    logger.info("User %s deleted", user_id)
-    return await user_repository.user_delete(db, user)
+    async with transaction(db):
+        user = await user_get(db, user_id)
+        logger.info("User %s deleted", user_id)
+        return await user_repository.user_delete(db, user)
